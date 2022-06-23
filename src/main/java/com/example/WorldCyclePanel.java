@@ -148,10 +148,6 @@ public class WorldCyclePanel extends PluginPanel
     }
 
     private void UpdateConfig(){
-        System.out.println("Update config..");
-        if(configManager == null){
-            System.out.println("manager null");
-        }
 
         if(uiInput.getWorldSetInput().isEmpty()){
             configManager.unsetConfiguration(WorldCycleConfig.GROUP, WorldCycleConfig.CONFIG_WORLDSET);
