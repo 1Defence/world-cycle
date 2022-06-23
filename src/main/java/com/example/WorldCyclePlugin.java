@@ -26,7 +26,6 @@ package com.example;
 
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
-import java.time.Instant;
 import java.util.*;
 import javax.inject.Inject;
 
@@ -47,6 +46,9 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.WorldService;
 import net.runelite.client.input.KeyManager;
+import net.runelite.client.party.PartyMember;
+import net.runelite.client.party.PartyService;
+import net.runelite.client.party.WSClient;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
@@ -93,6 +95,12 @@ public class WorldCyclePlugin extends Plugin
 	@Inject
 	private WorldService worldService;
 
+	@Inject
+	private WSClient wsClient;
+
+	@Inject
+	private PartyService partyService;
+
 	private NavigationButton navButton_cycle;
 	public WorldCyclePanel panel_cycle;
 
@@ -127,6 +135,7 @@ public class WorldCyclePlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 
+		wsClient.registerMessage(WorldCycleUpdate.class);
 		keyManager.registerKeyListener(previousKeyListener);
 		keyManager.registerKeyListener(nextKeyListener);
 
@@ -380,14 +389,60 @@ public class WorldCyclePlugin extends Plugin
 	}
 
 	public void ChangeWorldSet(String worldset,boolean fromServer){
+
+		//request is local, send to server
 		if(!fromServer){
-			//send party info
+			if(LocalMemberIsValid()){
+				partyService.send(new WorldCycleUpdate(worldset));
+			}
 		}
-		panel_cycle.pendingRequest = true;
-		panel_cycle.uiInput.setWorldSetInput(worldset);
+
+		//always handle from self, only handle from server if accept cycle is on
+		if(!fromServer || config.acceptPartyCycle()){
+			panel_cycle.pendingRequest = true;
+			panel_cycle.uiInput.setWorldSetInput(worldset);
+		}
 
 	}
+	public boolean LocalMemberIsValid(){
+		PartyMember localMember = partyService.getLocalMember();
+		return (localMember != null);
+	}
 
+	@Subscribe
+	public void onWorldCycleUpdate(WorldCycleUpdate message)
+	{
+		//don't allow self updates, handle locally
+		if(partyService.getLocalMember().getMemberId() == message.getMemberId()){
+			return;
+		}
+
+		if(LocalMemberIsValid()){
+			ChangeWorldSet(message.getWorldSet(),true);
+		}
+	}
+	//Validate the world exists and isn't pvp before returning as a valid cycle world
+	World ValidateWorld(int worldNum){
+
+		WorldResult worldResult = worldService.getWorlds();
+		if (worldResult == null) {
+			return null;
+		}
+
+		World world = worldResult.findWorld(worldNum);
+		if(world == null){
+			return null;
+		}
+
+		//ensure there are zero instances of pvp worlds in the world cycle
+		EnumSet<WorldType> currentWorldTypes = world.getTypes().clone();
+		if(currentWorldTypes.contains(WorldType.PVP) || currentWorldTypes.contains(WorldType.HIGH_RISK)){
+			return null;
+		}
+
+		return world;
+	}
+	
 	List<World> getCustomWorldCycle(){
 
 		List<World> worldCycleList = new ArrayList<>();
@@ -416,7 +471,7 @@ public class WorldCyclePlugin extends Plugin
 						return 0;
 					}
 				})
-				.filter(world -> worldResult.findWorld(world) != null)
+				.filter(world -> ValidateWorld(world) != null)
 				.forEach(world -> worldCycleList.add(worldResult.findWorld(world)));
 		return worldCycleList;
 	}
@@ -424,5 +479,4 @@ public class WorldCyclePlugin extends Plugin
 	public String GetWorldSet(){
 		return panel_cycle.uiInput.getWorldSetInput();
 	}
-
 }
