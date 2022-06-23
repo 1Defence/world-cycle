@@ -45,7 +45,6 @@ import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.WorldService;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
@@ -99,7 +98,6 @@ public class WorldCyclePlugin extends Plugin
 
 	private net.runelite.api.World quickHopTargetWorld;
 	private int displaySwitcherAttempts = 0;
-	private Instant lastFetch;
 
 
 	private final HotkeyListener previousKeyListener = new HotkeyListener(() -> config.previousKey())
