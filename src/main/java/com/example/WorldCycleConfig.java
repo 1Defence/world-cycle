@@ -79,7 +79,7 @@ public interface WorldCycleConfig extends Config
 	)
 	default boolean acceptPartyCycle()
 	{
-		return true;
+		return false;
 	}
 
 }

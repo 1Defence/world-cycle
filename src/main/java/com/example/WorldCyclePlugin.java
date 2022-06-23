@@ -60,7 +60,7 @@ import net.runelite.http.api.worlds.WorldType;
 
 @PluginDescriptor(
 	name = "World Cycle",
-	description = "Custom Cycle...",
+	description = "Lighter, custom version of world hopper used to hop between a set of worlds circularly",
 	tags = {"switcher","cycle","world hopper"}
 )
 @Slf4j
@@ -442,7 +442,7 @@ public class WorldCyclePlugin extends Plugin
 
 		return world;
 	}
-	
+
 	List<World> getCustomWorldCycle(){
 
 		List<World> worldCycleList = new ArrayList<>();
