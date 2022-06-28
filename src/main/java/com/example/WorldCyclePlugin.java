@@ -189,8 +189,14 @@ public class WorldCyclePlugin extends Plugin
 		currentWorldTypes.remove(WorldType.LAST_MAN_STANDING);
 
 		List<World> customWorldCycle = getCustomWorldCycle();
-		List<World> worlds = !customWorldCycle.isEmpty() ? customWorldCycle : worldResult.getWorlds();
+		boolean cyclePresent = !customWorldCycle.isEmpty();
+		List<World> worlds = cyclePresent ? customWorldCycle : worldResult.getWorlds();
+		int attemptedWorlds = 0;
 
+		//don't limit the subscription type if the user is purposely attempting to hop between members and f2p
+		if(cyclePresent){
+			currentWorldTypes.remove(WorldType.MEMBERS);
+		}
 
 		int worldIdx = worlds.indexOf(currentWorld);
 		int totalLevel = client.getTotalLevel();
@@ -231,6 +237,11 @@ public class WorldCyclePlugin extends Plugin
 			// Treat LMS world like casual world
 			types.remove(WorldType.LAST_MAN_STANDING);
 
+			//don't limit the subscription type if the user is purposely attempting to hop between members and f2p
+			if(cyclePresent){
+				types.remove(WorldType.MEMBERS);
+			}
+
 			if (types.contains(WorldType.SKILL_TOTAL))
 			{
 				try
@@ -251,6 +262,11 @@ public class WorldCyclePlugin extends Plugin
 			// Avoid switching to near-max population worlds, as it will refuse to allow the hop if the world is full
 			if (world.getPlayers() >= MAX_PLAYER_COUNT)
 			{
+				//We've searched every world and not found a suitable world, break from loop
+				if(++attemptedWorlds == worlds.size()){
+					world = currentWorld;
+					break;
+				}
 				continue;
 			}
 
@@ -258,6 +274,12 @@ public class WorldCyclePlugin extends Plugin
 			if (currentWorldTypes.equals(types))
 			{
 				break;
+			}else{
+				//We've searched every world and not found a suitable world, break from loop
+				if(++attemptedWorlds == worlds.size()){
+					world = currentWorld;
+					break;
+				}
 			}
 		}
 		while (world != currentWorld);
