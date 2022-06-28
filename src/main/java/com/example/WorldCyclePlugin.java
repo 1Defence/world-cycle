@@ -156,7 +156,7 @@ public class WorldCyclePlugin extends Plugin
 	@Override
 	protected void shutDown() throws Exception
 	{
-
+		wsClient.unregisterMessage(WorldCycleUpdate.class);
 		keyManager.unregisterKeyListener(previousKeyListener);
 		keyManager.unregisterKeyListener(nextKeyListener);
 
