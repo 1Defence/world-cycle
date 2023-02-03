@@ -112,6 +112,7 @@ public class WorldCyclePlugin extends Plugin
 	private net.runelite.api.World quickHopTargetWorld;
 	private int displaySwitcherAttempts = 0;
 
+	private boolean lastFocusStatus = false;
 
 	private final CustomHotkeyListener previousKeyListener = new CustomHotkeyListener(() -> config.previousKey())
 	{
@@ -360,14 +361,17 @@ public class WorldCyclePlugin extends Plugin
 	public void onClientTick(ClientTick event)
 	{
 		//Fix chat being locked & hotkeys from being unusable if user loses focus
-		if(!clientUI.isFocused()){
-			if(nextKeyListener.isPressed()){
-				nextKeyListener.ReleaseHotkey();
-			}
-			if(previousKeyListener.isPressed()){
-				previousKeyListener.ReleaseHotkey();
+		if(lastFocusStatus != clientUI.isFocused()){
+			if(!clientUI.isFocused()){
+				if(nextKeyListener.isPressed()){
+					nextKeyListener.ReleaseHotkey();
+				}
+				if(previousKeyListener.isPressed()){
+					previousKeyListener.ReleaseHotkey();
+				}
 			}
 		}
+		lastFocusStatus = clientUI.isFocused();
 	}
 
 	@Subscribe
