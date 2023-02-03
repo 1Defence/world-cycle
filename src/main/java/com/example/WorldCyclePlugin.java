@@ -35,6 +35,7 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
@@ -52,6 +53,7 @@ import net.runelite.client.party.WSClient;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.ClientUI;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.*;
 import net.runelite.http.api.worlds.World;
@@ -73,6 +75,9 @@ public class WorldCyclePlugin extends Plugin
 
 	@Inject
 	private Client client;
+
+	@Inject
+	private ClientUI clientUI;
 
 	@Inject
 	private ClientThread clientThread;
@@ -108,7 +113,7 @@ public class WorldCyclePlugin extends Plugin
 	private int displaySwitcherAttempts = 0;
 
 
-	private final HotkeyListener previousKeyListener = new HotkeyListener(() -> config.previousKey())
+	private final CustomHotkeyListener previousKeyListener = new CustomHotkeyListener(() -> config.previousKey())
 	{
 		@Override
 		public void hotkeyPressed()
@@ -116,7 +121,7 @@ public class WorldCyclePlugin extends Plugin
 			clientThread.invoke(() -> hop(true));
 		}
 	};
-	private final HotkeyListener nextKeyListener = new HotkeyListener(() -> config.nextKey())
+	private final CustomHotkeyListener nextKeyListener = new CustomHotkeyListener(() -> config.nextKey())
 	{
 		@Override
 		public void hotkeyPressed()
@@ -349,6 +354,20 @@ public class WorldCyclePlugin extends Plugin
 
 		quickHopTargetWorld = rsWorld;
 		displaySwitcherAttempts = 0;
+	}
+
+	@Subscribe
+	public void onClientTick(ClientTick event)
+	{
+		//Fix chat being locked & hotkeys from being unusable if user loses focus
+		if(!clientUI.isFocused()){
+			if(nextKeyListener.isPressed()){
+				nextKeyListener.ReleaseHotkey();
+			}
+			if(previousKeyListener.isPressed()){
+				previousKeyListener.ReleaseHotkey();
+			}
+		}
 	}
 
 	@Subscribe
