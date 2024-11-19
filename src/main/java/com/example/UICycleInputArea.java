@@ -38,11 +38,13 @@ import net.runelite.client.ui.components.FlatTextField;
 class UICycleInputArea extends JPanel
 {
     private final JTextField uiFieldWorldSet;
+    private final String WORLD_SET_LABEL_TEXT = "World Set";
+    private final String TOOL_TIP_TEXT = "<html>List of worlds to cycle through separated by commas<br>Example usage: 302,303,304</html>";
 
     UICycleInputArea()
     {
         setLayout(new GridLayout(2, 2, 7, 7));
-        uiFieldWorldSet = addComponent("World Set");
+        uiFieldWorldSet = CreateComponent();
     }
 
     String getWorldSetInput()
@@ -65,19 +67,21 @@ class UICycleInputArea extends JPanel
         field.setText(value);
     }
 
-    private JTextField addComponent(String label)
+    private JTextField CreateComponent()
     {
         final JPanel container = new JPanel();
         container.setLayout(new BorderLayout());
 
-        final JLabel uiLabel = new JLabel(label);
+        final JLabel uiLabel = new JLabel(WORLD_SET_LABEL_TEXT);
         final FlatTextField uiInput = new FlatTextField();
 
+        uiInput.setToolTipText(TOOL_TIP_TEXT);
         uiInput.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         uiInput.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
         uiInput.setBorder(new EmptyBorder(5, 7, 5, 7));
 
-        uiLabel.setFont(FontManager.getRunescapeSmallFont());
+        uiLabel.setToolTipText(TOOL_TIP_TEXT);
+        uiLabel.setFont(FontManager.getRunescapeBoldFont());
         uiLabel.setBorder(new EmptyBorder(0, 0, 4, 0));
         uiLabel.setForeground(Color.WHITE);
 
