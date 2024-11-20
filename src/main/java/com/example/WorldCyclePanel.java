@@ -34,6 +34,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -78,7 +79,9 @@ public class WorldCyclePanel extends PluginPanel
 
         SetFromConfig();
 
-        uiInput.getUiFieldWorldSet().getDocument().addDocumentListener(new DocumentListener() {
+        AbstractDocument worldSetDoc = ((AbstractDocument)(uiInput.getUiFieldWorldSet().getDocument()));
+        worldSetDoc.setDocumentFilter(new WorldSetDocumentFilter());
+        worldSetDoc.addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {
             }
             public void removeUpdate(DocumentEvent e) {
