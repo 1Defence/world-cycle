@@ -114,6 +114,10 @@ public class WorldCyclePlugin extends Plugin
 
 	private boolean lastFocusStatus = false;
 
+	//50 worlds separated by commas, prevents potential abuse of spamming large packets in party
+	//this does not limit local usage, simply prevents egregious party updates
+	private final int MAXIMUM_PACKET_LENGTH = 199;
+
 	private final CustomHotkeyListener previousKeyListener = new CustomHotkeyListener(() -> config.previousKey())
 	{
 		@Override
@@ -438,7 +442,11 @@ public class WorldCyclePlugin extends Plugin
 		//request is local, send to server
 		if(!fromServer){
 			if(LocalMemberIsValid()){
-				partyService.send(new WorldCycleUpdate(worldset));
+				if(worldset.length() > MAXIMUM_PACKET_LENGTH){
+					
+				}else{
+					partyService.send(new WorldCycleUpdate(worldset));
+				}
 			}
 		}
 
