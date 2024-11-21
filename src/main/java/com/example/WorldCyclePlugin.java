@@ -432,7 +432,7 @@ public class WorldCyclePlugin extends Plugin
 		if(!fromServer){
 			if(LocalMemberIsValid()){
 				if(worldset.length() > MAXIMUM_PACKET_LENGTH){
-
+					PostMessageSetNotSent();
 				}else{
 					partyService.send(new WorldCycleUpdate(worldset));
 				}
@@ -443,8 +443,32 @@ public class WorldCyclePlugin extends Plugin
 		if(!fromServer || config.acceptPartyCycle()){
 			panel_cycle.pendingRequest = true;
 			panel_cycle.uiInput.setWorldSetInput(worldset);
+			PostMessageSetChanged(worldset,fromServer);
 		}
 
+	}
+
+	public void PostMessageSetChanged(String worldset, boolean fromServer){
+		String updateMessage = "World set updated"
+				+ (fromServer ?  " by party member" : "")
+				+ (worldset.length() <= 39 ? "\n                          ("+worldset+")" : "");
+		String chatMessage = new ChatMessageBuilder()
+				.append(ChatColorType.HIGHLIGHT)
+				.append("[World Cycle] ")
+				.append(ChatColorType.NORMAL)
+				.append(updateMessage)
+				.build();
+		SendGameMessage(chatMessage);
+	}
+
+	public void PostMessageSetNotSent(){
+		String chatMessage = new ChatMessageBuilder()
+				.append(ChatColorType.HIGHLIGHT)
+				.append("[World Cycle] ")
+				.append(ChatColorType.HIGHLIGHT)
+				.append("World set not sent to party, Maximum of 50 worlds in the set.")
+				.build();
+		SendGameMessage(chatMessage);
 	}
 
 	public void SendGameMessage(String chatMessage){
