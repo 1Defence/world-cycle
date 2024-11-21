@@ -301,10 +301,7 @@ public class WorldCyclePlugin extends Plugin
 				.append("Couldn't find a world to quick-hop to.")
 				.build();
 
-			chatMessageManager.queue(QueuedMessage.builder()
-				.type(ChatMessageType.CONSOLE)
-				.runeLiteFormattedMessage(chatMessage)
-				.build());
+			SendGameMessage(chatMessage);
 		}
 		else
 		{
@@ -350,11 +347,7 @@ public class WorldCyclePlugin extends Plugin
 				.append("..")
 				.build();
 
-			chatMessageManager
-				.queue(QueuedMessage.builder()
-					.type(ChatMessageType.CONSOLE)
-					.runeLiteFormattedMessage(chatMessage)
-					.build());
+			SendGameMessage(chatMessage);
 		}
 
 		quickHopTargetWorld = rsWorld;
@@ -401,11 +394,7 @@ public class WorldCyclePlugin extends Plugin
 					.append(" attempts.")
 					.build();
 
-				chatMessageManager
-					.queue(QueuedMessage.builder()
-						.type(ChatMessageType.CONSOLE)
-						.runeLiteFormattedMessage(chatMessage)
-						.build());
+				SendGameMessage(chatMessage);
 
 				resetQuickHopper();
 			}
@@ -443,7 +432,7 @@ public class WorldCyclePlugin extends Plugin
 		if(!fromServer){
 			if(LocalMemberIsValid()){
 				if(worldset.length() > MAXIMUM_PACKET_LENGTH){
-					
+
 				}else{
 					partyService.send(new WorldCycleUpdate(worldset));
 				}
@@ -457,6 +446,14 @@ public class WorldCyclePlugin extends Plugin
 		}
 
 	}
+
+	public void SendGameMessage(String chatMessage){
+		chatMessageManager.queue(QueuedMessage.builder()
+				.type(ChatMessageType.CONSOLE)
+				.runeLiteFormattedMessage(chatMessage)
+				.build());
+	}
+
 	public boolean LocalMemberIsValid(){
 		PartyMember localMember = partyService.getLocalMember();
 		return (localMember != null);
