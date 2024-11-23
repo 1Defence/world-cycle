@@ -35,7 +35,6 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.widgets.WidgetInfo;
@@ -136,7 +135,7 @@ public class WorldCyclePlugin extends Plugin
 	boolean configBoldFont,configDisplayPreviousWorld,configDisplayCurrentWorld,configDisplayNextWorld;
 	boolean shouldDisplayPanel;
 
-	private final CustomHotkeyListener previousKeyListener = new CustomHotkeyListener(() -> config.previousKey())
+	private final HotkeyListener previousKeyListener = new HotkeyListener(() -> config.previousKey())
 	{
 		@Override
 		public void hotkeyPressed()
@@ -144,7 +143,7 @@ public class WorldCyclePlugin extends Plugin
 			clientThread.invoke(() -> hop(true));
 		}
 	};
-	private final CustomHotkeyListener nextKeyListener = new CustomHotkeyListener(() -> config.nextKey())
+	private final HotkeyListener nextKeyListener = new HotkeyListener(() -> config.nextKey())
 	{
 		@Override
 		public void hotkeyPressed()
@@ -452,22 +451,6 @@ public class WorldCyclePlugin extends Plugin
 		displaySwitcherAttempts = 0;
 	}
 
-	@Subscribe
-	public void onClientTick(ClientTick event)
-	{
-		//Fix chat being locked & hotkeys from being unusable if user loses focus
-		if(lastFocusStatus != clientUI.isFocused()){
-			if(!clientUI.isFocused()){
-				if(nextKeyListener.isPressed()){
-					nextKeyListener.ReleaseHotkey();
-				}
-				if(previousKeyListener.isPressed()){
-					previousKeyListener.ReleaseHotkey();
-				}
-			}
-		}
-		lastFocusStatus = clientUI.isFocused();
-	}
 
 	@Subscribe
 	public void onGameTick(GameTick event)
