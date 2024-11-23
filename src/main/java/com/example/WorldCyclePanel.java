@@ -170,6 +170,7 @@ public class WorldCyclePanel extends PluginPanel
         String worldSet = configManager.getConfiguration(WorldCycleConfig.GROUP, WorldCycleConfig.CONFIG_WORLDSET);
         if(worldSet != null){
             uiInput.setWorldSetInput(configManager.getConfiguration(WorldCycleConfig.GROUP, WorldCycleConfig.CONFIG_WORLDSET));
+            SwingUtilities.invokeLater(()->plugin.CacheNearbyWorlds());
         }
 
     }

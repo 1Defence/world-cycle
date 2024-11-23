@@ -28,7 +28,7 @@ import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
 import java.util.*;
 import javax.inject.Inject;
-
+import java.awt.Color;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -36,6 +36,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
@@ -45,6 +46,7 @@ import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.WorldService;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.party.PartyMember;
@@ -55,6 +57,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.ClientUI;
 import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.*;
 import net.runelite.http.api.worlds.World;
 import net.runelite.http.api.worlds.WorldResult;
@@ -106,6 +109,12 @@ public class WorldCyclePlugin extends Plugin
 	@Inject
 	private PartyService partyService;
 
+	@Inject
+	private WorldCycleOverlay overlay;
+
+	@Inject
+	private OverlayManager overlayManager;
+
 	private NavigationButton navButton_cycle;
 	public WorldCyclePanel panel_cycle;
 
@@ -117,6 +126,15 @@ public class WorldCyclePlugin extends Plugin
 	//50 worlds separated by commas, prevents potential abuse of spamming large packets in party
 	//this does not limit local usage, simply prevents egregious party updates
 	private final int MAXIMUM_PACKET_LENGTH = 199;
+
+	int currentWorldId, nextWorldId, previousWorldId = -1;
+	GameState oneStatePrior = GameState.LOGGING_IN;
+	GameState twoStatesPrior = GameState.LOGGING_IN;
+
+	Color configWorldPanelColor,configPreviousWorldColor,configCurrentWorldColor,configNextWorldColor;
+	int configFontSize;
+	boolean configBoldFont,configDisplayPreviousWorld,configDisplayCurrentWorld,configDisplayNextWorld;
+	boolean shouldDisplayPanel;
 
 	private final CustomHotkeyListener previousKeyListener = new CustomHotkeyListener(() -> config.previousKey())
 	{
@@ -144,7 +162,7 @@ public class WorldCyclePlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-
+		CacheConfigs();
 		wsClient.registerMessage(WorldCycleUpdate.class);
 		keyManager.registerKeyListener(previousKeyListener);
 		keyManager.registerKeyListener(nextKeyListener);
@@ -171,21 +189,83 @@ public class WorldCyclePlugin extends Plugin
 		keyManager.unregisterKeyListener(nextKeyListener);
 
 		clientToolbar.removeNavigation(navButton_cycle);
+		overlayManager.remove(overlay);
 	}
 
-	private void hop(boolean previous)
+	/**
+	 * Detect that a world change has occured by checking the previous state, against the prior previous state
+	 * Refreshes the cached worlds for overlay display.
+	 */
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
 	{
-		WorldResult worldResult = worldService.getWorlds();
-		if (worldResult == null || client.getGameState() != GameState.LOGGED_IN)
+		GameState state = event.getGameState();
+		if(oneStatePrior != state){
+			if(oneStatePrior == GameState.LOADING && twoStatesPrior == GameState.HOPPING){
+				//a world hop has occured and the world has loaded.
+				CacheNearbyWorlds();
+			}
+			twoStatesPrior = oneStatePrior;
+			oneStatePrior = state;
+		}
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged configChanged)
+	{
+		if (!configChanged.getGroup().equals(WorldCycleConfig.GROUP))
 		{
 			return;
+		}
+
+		CacheConfigs();
+	}
+
+	/**
+	 * Cache configs to prevent spam calls to config in the overlay.
+	 * Add or remove the overlay panel if the status has changed.
+	 */
+	public void CacheConfigs(){
+		configWorldPanelColor = config.worldPanelColor();
+		configPreviousWorldColor = config.previousWorldColor();
+		configCurrentWorldColor = config.currentWorldColor();
+		configNextWorldColor = config.nextWorldColor();
+		configFontSize = config.fontSize();
+		configBoldFont = config.boldFont();
+		configDisplayPreviousWorld = config.displayPreviousWorld();
+		configDisplayCurrentWorld = config.displayCurrentWorld();
+		configDisplayNextWorld = config.displayNextWorld();
+
+		//if there was no panel before add it, if there was a panel and no longer need it, remove it
+		boolean previousDisplayState = shouldDisplayPanel;
+		shouldDisplayPanel = configDisplayPreviousWorld || configDisplayCurrentWorld || configDisplayNextWorld;
+		if(previousDisplayState != shouldDisplayPanel){
+			if(shouldDisplayPanel){
+				overlayManager.add(overlay);
+			}else{
+				overlayManager.remove(overlay);
+			}
+		}
+	}
+
+	/**
+	 * Get the next or previous world in relation to the current world in the set.
+	 * In the case that the current world is not in the set it defaults to : first world is next, last world is previous
+	 * In the case that no world cycle is present it returns the standard next/previous world in relation to the players current world.
+	 */
+	private World GetWorld(boolean previous)
+	{
+		WorldResult worldResult = worldService.getWorlds();
+		if (worldResult == null)
+		{
+			return null;
 		}
 
 		World currentWorld = worldResult.findWorld(client.getWorld());
 
 		if (currentWorld == null)
 		{
-			return;
+			return null;
 		}
 
 		EnumSet<WorldType> currentWorldTypes = currentWorld.getTypes().clone();
@@ -293,8 +373,26 @@ public class WorldCyclePlugin extends Plugin
 			}
 		}
 		while (world != currentWorld);
+		return world;
+	}
 
-		if (world == currentWorld)
+	private void hop(boolean previous)
+	{
+		WorldResult worldResult = worldService.getWorlds();
+		if (worldResult == null || client.getGameState() != GameState.LOGGED_IN)
+		{
+			return;
+		}
+
+		World currentWorld = worldResult.findWorld(client.getWorld());
+
+		if (currentWorld == null)
+		{
+			return;
+		}
+
+		World world = GetWorld(previous);
+		if (world == currentWorld || world == null)
 		{
 			String chatMessage = new ChatMessageBuilder()
 				.append(ChatColorType.NORMAL)
@@ -443,6 +541,7 @@ public class WorldCyclePlugin extends Plugin
 		if(!fromServer || config.acceptPartyCycle()){
 			panel_cycle.pendingRequest = true;
 			panel_cycle.uiInput.setWorldSetInput(worldset);
+			CacheNearbyWorlds();
 			PostMessageSetChanged(worldset,fromServer);
 		}
 
@@ -548,6 +647,27 @@ public class WorldCyclePlugin extends Plugin
 				.filter(world -> ValidateWorld(world) != null)
 				.forEach(world -> worldCycleList.add(worldResult.findWorld(world)));
 		return worldCycleList;
+	}
+
+	/**
+	 * Cache current, previous and next world in the set
+	 */
+	void CacheNearbyWorlds(){
+		currentWorldId = client.getWorld();
+
+		World previousWorld = GetWorld(true);
+		if(previousWorld != null){
+			previousWorldId = previousWorld.getId();
+		}else{
+			previousWorldId = -1;
+		}
+
+		World nextWorld = GetWorld(false);
+		if(nextWorld != null){
+			nextWorldId = nextWorld.getId();
+		}else{
+			nextWorldId = -1;
+		}
 	}
 
 	public String GetWorldSet(){

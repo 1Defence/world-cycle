@@ -24,19 +24,26 @@
  */
 package com.example;
 
+import java.awt.Color;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
+import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Keybind;
+import net.runelite.client.config.Range;
 
 @ConfigGroup(WorldCycleConfig.GROUP)
 public interface WorldCycleConfig extends Config
 {
 	String GROUP = "worldcycle";
 	String CONFIG_WORLDSET = "worldset";
+
+	@ConfigSection(name="Panel Overlay", description="Optional panel displaying the neighboring worlds in your cycle.", position=20, closedByDefault=true)
+	String panelOverlay = "panelOverlay";
 
 	@ConfigItem(
 		keyName = "previousKey",
@@ -80,6 +87,115 @@ public interface WorldCycleConfig extends Config
 	default boolean acceptPartyCycle()
 	{
 		return false;
+	}
+
+	@Alpha
+	@ConfigItem(
+			keyName = "worldPanelColor",
+			name = "World Panel Color",
+			description = "world panel color",
+			position = 4,
+			section = panelOverlay
+	)
+	default Color worldPanelColor()
+	{
+		return new Color(0,0,0,100);
+	}
+
+	@Range(max=16, min=10)
+	@ConfigItem(
+			position=5,
+			keyName="fontSize",
+			name="Font Size",
+			description="font size",
+			section = panelOverlay
+	)
+	default int fontSize() {
+		return 12;
+	}
+
+	@ConfigItem(
+			keyName = "boldFont",
+			name = "Bold Font",
+			description = "Configures whether font is bold or not",
+			position = 6,
+			section = panelOverlay
+	)
+	default boolean boldFont()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "displayPreviousWorld",
+			name = "Display Previous World",
+			description = "Display the upcoming world you'll hop to using the [Quick-hop previous] Hotkey.",
+			position = 7,
+			section = panelOverlay
+	)
+	default boolean displayPreviousWorld()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "previousWorldColor",
+			name = "Previous World Color",
+			description = "Text color of the previous world in cycle",
+			position = 8,
+			section = panelOverlay
+	)
+	default Color previousWorldColor()
+	{
+		return Color.WHITE;
+	}
+
+	@ConfigItem(
+			keyName = "displayCurrentWorld",
+			name = "Display Current World",
+			description = "Display the current world you're on, regardless of it being in cycle.",
+			position = 9,
+			section = panelOverlay
+	)
+	default boolean displayCurrentWorld()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "currentWorldColor",
+			name = "Current World Color",
+			description = "Text color of your current world.",
+			position = 10,
+			section = panelOverlay
+	)
+	default Color currentWorldColor()
+	{
+		return Color.GREEN;
+	}
+
+	@ConfigItem(
+			keyName = "displayNextWorld",
+			name = "Display Next World",
+			description = "Display the upcoming world you'll hop to using the [Quick-hop next] Hotkey.",
+			position = 11,
+			section = panelOverlay
+	)
+	default boolean displayNextWorld()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "nextWorldColor",
+			name = "Next World Color",
+			description = "Text color of the next world in cycle",
+			position = 12,
+			section = panelOverlay
+	)
+	default Color nextWorldColor()
+	{
+		return Color.WHITE;
 	}
 
 }
