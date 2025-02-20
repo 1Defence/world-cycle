@@ -120,8 +120,6 @@ public class WorldCyclePlugin extends Plugin
 	private net.runelite.api.World quickHopTargetWorld;
 	private int displaySwitcherAttempts = 0;
 
-	private boolean lastFocusStatus = false;
-
 	//50 worlds separated by commas, prevents potential abuse of spamming large packets in party
 	//this does not limit local usage, simply prevents egregious party updates
 	private final int MAXIMUM_PACKET_LENGTH = 199;
