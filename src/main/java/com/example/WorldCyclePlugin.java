@@ -133,7 +133,7 @@ public class WorldCyclePlugin extends Plugin
 	Color configWorldPanelColor,configPreviousWorldColor,configCurrentWorldColor,configNextWorldColor;
 	int configFontSize;
 	boolean configBoldFont,configDisplayPreviousWorld,configDisplayCurrentWorld,configDisplayNextWorld;
-	boolean shouldDisplayPanel;
+	boolean overlayActive;
 
 	private final HotkeyListener previousKeyListener = new HotkeyListener(() -> config.previousKey())
 	{
@@ -161,6 +161,7 @@ public class WorldCyclePlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
+		overlayActive = false;
 		CacheConfigs();
 		wsClient.registerMessage(WorldCycleUpdate.class);
 		keyManager.registerKeyListener(previousKeyListener);
@@ -178,6 +179,7 @@ public class WorldCyclePlugin extends Plugin
 
 		clientToolbar.addNavigation(navButton_cycle);
 
+		CacheNearbyWorlds();
 	}
 
 	@Override
@@ -235,16 +237,30 @@ public class WorldCyclePlugin extends Plugin
 		configDisplayCurrentWorld = config.displayCurrentWorld();
 		configDisplayNextWorld = config.displayNextWorld();
 
-		//if there was no panel before add it, if there was a panel and no longer need it, remove it
-		boolean previousDisplayState = shouldDisplayPanel;
-		shouldDisplayPanel = configDisplayPreviousWorld || configDisplayCurrentWorld || configDisplayNextWorld;
-		if(previousDisplayState != shouldDisplayPanel){
-			if(shouldDisplayPanel){
-				overlayManager.add(overlay);
-			}else{
-				overlayManager.remove(overlay);
-			}
+		RefreshOverlay();
+	}
+
+	/**
+	 * Determine whether overlay should be active and adds/removes it from the overlayManager.
+	 * Returns if current state is already set correctly.
+	 */
+	void RefreshOverlay()
+	{
+		boolean active = configDisplayPreviousWorld || configDisplayCurrentWorld || configDisplayNextWorld;
+
+		if(active == overlayActive)
+			return;
+
+		if(active)
+		{
+			overlayManager.add(overlay);
 		}
+		else
+		{
+			overlayManager.remove(overlay);
+		}
+
+		overlayActive = active;
 	}
 
 	/**
