@@ -198,4 +198,22 @@ public interface WorldCycleConfig extends Config
 		return Color.WHITE;
 	}
 
+	@ConfigItem(
+			keyName = "enableAutoHide",
+			name = "Enable auto-hide panel",
+			position = 13,
+			description = "Automatically hide the panel after inactivity",
+			section = panelOverlay
+	)
+	default boolean enableAutoHide() { return false; }
+
+	@ConfigItem(
+			keyName = "hideAfter",
+			name = "Hide panel after (seconds)",
+			position = 14,
+			description = "Hide the panel if no world hop occurs for this many seconds",
+			section = panelOverlay
+	)
+	default int hideAfterSeconds() { return 60; }
+
 }
