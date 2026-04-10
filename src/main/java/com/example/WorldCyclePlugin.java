@@ -26,6 +26,9 @@ package com.example;
 
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import javax.inject.Inject;
 import java.awt.Color;
@@ -37,6 +40,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.WorldChanged;
 import net.runelite.api.widgets.ComponentID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatColorType;
@@ -53,6 +57,7 @@ import net.runelite.client.party.PartyService;
 import net.runelite.client.party.WSClient;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.task.Schedule;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.ClientUI;
 import net.runelite.client.ui.NavigationButton;
@@ -130,8 +135,9 @@ public class WorldCyclePlugin extends Plugin
 
 	Color configWorldPanelColor,configPreviousWorldColor,configCurrentWorldColor,configNextWorldColor;
 	int configFontSize;
-	boolean configBoldFont,configDisplayPreviousWorld,configDisplayCurrentWorld,configDisplayNextWorld;
+	boolean configBoldFont,configDisplayPreviousWorld,configDisplayCurrentWorld,configDisplayNextWorld, configAutoHide;
 	boolean overlayActive;
+	private Instant lastHopTime;
 
 	private final HotkeyListener previousKeyListener = new HotkeyListener(() -> config.previousKey())
 	{
@@ -178,6 +184,7 @@ public class WorldCyclePlugin extends Plugin
 		clientToolbar.addNavigation(navButton_cycle);
 
 		CacheNearbyWorlds();
+		lastHopTime = Instant.now();
 	}
 
 	@Override
@@ -234,6 +241,7 @@ public class WorldCyclePlugin extends Plugin
 		configDisplayPreviousWorld = config.displayPreviousWorld();
 		configDisplayCurrentWorld = config.displayCurrentWorld();
 		configDisplayNextWorld = config.displayNextWorld();
+		configAutoHide = config.enableAutoHide();
 
 		RefreshOverlay();
 	}
@@ -259,6 +267,34 @@ public class WorldCyclePlugin extends Plugin
 		}
 
 		overlayActive = active;
+	}
+
+	@Subscribe
+	public void onWorldChanged(WorldChanged event)
+	{
+		lastHopTime = Instant.now();
+		if (configAutoHide) RefreshOverlay(); // ensure panel is visible after a hop
+	}
+	@Schedule(
+			period = 1,
+			unit = ChronoUnit.SECONDS
+	)
+	public void checkTimeout()
+	{
+		// stop if no time or feature not enabled
+		if (lastHopTime == null || !configAutoHide)
+		{
+			return;
+		}
+
+		long secondsSinceHop = Duration.between(lastHopTime, Instant.now()).getSeconds();
+
+		if (secondsSinceHop >= config.hideAfterSeconds())
+		{
+			// Hide Panel after hop if time expired
+			overlayActive = false;
+			overlayManager.remove(overlay);
+		}
 	}
 
 	/**
