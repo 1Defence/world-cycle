@@ -198,4 +198,28 @@ public interface WorldCycleConfig extends Config
 		return Color.WHITE;
 	}
 
+	@ConfigItem(
+			keyName = "dimmerOnHop",
+			name = "Dimmer On Hop",
+			description = "Dimmer the game client while a hop is in progress to indicate that your attempt was successful.",
+			position = 13,
+			section = panelOverlay
+	)
+	default boolean dimmerOnHop()
+	{
+		return false;
+	}
+
+	@Alpha
+	@ConfigItem(
+			keyName = "dimmerColor",
+			name = "Dimmer Color",
+			description = "Color to dim the client frame with during world hop.",
+			position = 14,
+			section = panelOverlay
+	)
+	default Color dimmerColor()
+	{
+		return new Color(0,0,0,100);
+	}
 }

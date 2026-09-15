@@ -16,7 +16,7 @@ import java.awt.Color;
 
 public class WorldCycleOverlay extends OverlayPanel {
     private final WorldCyclePlugin plugin;
-
+    private Graphics2D lastGraphics2D;
     @Inject
     private WorldCycleOverlay(WorldCyclePlugin plugin) {
         this.plugin = plugin;
@@ -44,7 +44,19 @@ public class WorldCycleOverlay extends OverlayPanel {
 
         graphics.setFont(new Font(FontManager.getRunescapeFont().toString(), plugin.configBoldFont ? Font.BOLD : Font.PLAIN, plugin.configFontSize));
 
+        lastGraphics2D = graphics;
         return super.render(graphics);
+    }
+
+    /**
+     * Draws singular dimmer frame over the client to indicate a hop is in progress
+     */
+    public void DrawDimmer(Dimension size){
+        if(lastGraphics2D == null)
+            return;
+        lastGraphics2D.setColor(plugin.configDimmerColor);
+        lastGraphics2D.fillRect(0, 0, size.width, size.height);
+        lastGraphics2D = null;
     }
 
     public void BuildComponent(boolean qualifier, int worldId, Color color){

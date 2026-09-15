@@ -128,9 +128,9 @@ public class WorldCyclePlugin extends Plugin
 	GameState oneStatePrior = GameState.LOGGING_IN;
 	GameState twoStatesPrior = GameState.LOGGING_IN;
 
-	Color configWorldPanelColor,configPreviousWorldColor,configCurrentWorldColor,configNextWorldColor;
+	Color configWorldPanelColor,configPreviousWorldColor,configCurrentWorldColor,configNextWorldColor,configDimmerColor;
 	int configFontSize;
-	boolean configBoldFont,configDisplayPreviousWorld,configDisplayCurrentWorld,configDisplayNextWorld;
+	boolean configBoldFont,configDisplayPreviousWorld,configDisplayCurrentWorld,configDisplayNextWorld,configDimmerOnHop;
 	boolean overlayActive;
 
 	private final HotkeyListener previousKeyListener = new HotkeyListener(() -> config.previousKey())
@@ -199,6 +199,11 @@ public class WorldCyclePlugin extends Plugin
 	public void onGameStateChanged(GameStateChanged event)
 	{
 		GameState state = event.getGameState();
+
+		if(configDimmerOnHop && state == GameState.HOPPING){
+			overlay.DrawDimmer(client.getCanvas().getSize());
+		}
+
 		if(oneStatePrior != state){
 			if(oneStatePrior == GameState.LOADING && twoStatesPrior == GameState.HOPPING){
 				//a world hop has occured and the world has loaded.
@@ -229,11 +234,13 @@ public class WorldCyclePlugin extends Plugin
 		configPreviousWorldColor = config.previousWorldColor();
 		configCurrentWorldColor = config.currentWorldColor();
 		configNextWorldColor = config.nextWorldColor();
+		configDimmerColor = config.dimmerColor();
 		configFontSize = config.fontSize();
 		configBoldFont = config.boldFont();
 		configDisplayPreviousWorld = config.displayPreviousWorld();
 		configDisplayCurrentWorld = config.displayCurrentWorld();
 		configDisplayNextWorld = config.displayNextWorld();
+		configDimmerOnHop = config.dimmerOnHop();
 
 		RefreshOverlay();
 	}
